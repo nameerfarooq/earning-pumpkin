@@ -120,22 +120,30 @@ function App() {
     // Convert value to string to handle both string and number input
     const stringValue = value.toString();
 
+    // Function to add spaces every 3 digits in the integer part
+    const formatIntegerPart = (integerPart) => {
+      return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    };
+
     // Check if there's a decimal point
     if (stringValue.includes(".")) {
       // Split the integer part and decimal part
       const [integerPart, decimalPart] = stringValue.split(".");
 
-      // If decimal part is longer than 3 digits, truncate it and add "..."
+      // Format integer part with spaces every 3 digits
+      const formattedInteger = formatIntegerPart(integerPart);
+
+      // If decimal part is longer than 3 digits, truncate it
       if (decimalPart.length > 3) {
-        return `${integerPart}.${decimalPart.slice(0, 3)}...`;
+        return `${formattedInteger}.${decimalPart.slice(0, 3)}`;
       }
 
-      // If decimal part is 3 digits or less, return the original value
-      return stringValue;
+      // If decimal part is 3 digits or less, return the formatted integer and full decimal
+      return `${formattedInteger}.${decimalPart}`;
     }
 
-    // If no decimal, return the original value
-    return stringValue;
+    // If no decimal, just format the integer part
+    return formatIntegerPart(stringValue);
   }
   useEffect(() => {
     if (executionID) {
@@ -211,7 +219,7 @@ function App() {
               </div>
               <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end">
                 <div className="flex items-center gap-3 justify-end">
-                  <img src={pumpkinlogo} alt="Icon" />
+                  <img width={40} src={pumpkinlogo} alt="Icon" />
                   <p className="font-bold  text-[18px] leading-[21px] text-white2">
                     Pumpkin earnings
                   </p>
@@ -220,14 +228,6 @@ function App() {
                   ${formatDecimal(pumpkinearninig)}
                 </p>
               </div>
-            </div>
-            <div className="w-full flex flex-wrap justify-between items-center gap-3 card-shadow bg-lightGray rounded-md p-4">
-              <p className="font-bold text-center  text-[18px] leading-[21px] text-white2">
-                Creator Loss
-              </p>
-              <p className="text-[#BA4706] text-center  sm:text-right Fraunces font-semibold text-[27px] leading-[33px]">
-                $356 730
-              </p>
             </div>
           </div>
         )}
