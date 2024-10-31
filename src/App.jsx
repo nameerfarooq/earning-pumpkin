@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 import Header from "./components/Header";
 import pumpkinsearch from "./assets/icons/pumpkinsearch.svg";
@@ -5,7 +6,144 @@ import kid from "./assets/icons/kid.svg";
 import pumpfunicon from "./assets/icons/pumpfunicon.svg";
 import pumpkinlogo from "./assets/icons/pumpkinlogo.svg";
 import Footer from "./components/Footer";
+import axios from "axios";
 function App() {
+  const [tokenAddress, setTokenAddress] = useState(""); // Store user input
+  const [tokenVolume, settokenVolume] = useState(""); // Store API response
+  const [executionID, setexecutionID] = useState("");
+  const [loading, setLoading] = useState(false); // Loading state
+  const [pumpfunEarning, setpumpfunEarning] = useState("");
+  const [pumpkinearninig, setpumpkinearninig] = useState("");
+  const [solPrice, setsolPrice] = useState("");
+  async function fetchSolanaPrice() {
+    try {
+      const response = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      const solanaPrice = data.solana.usd;
+      setsolPrice(solanaPrice);
+      console.log(`Current Solana Price (USD): $${solanaPrice}`);
+
+      // Do something with solanaPrice, e.g., update UI
+    } catch (error) {
+      console.error("Failed to fetch Solana price:", error);
+    }
+  }
+  useEffect(() => {
+    fetchSolanaPrice();
+  }, []);
+  useEffect(() => {
+    if (solPrice) {
+      const earning = solPrice * 0.5;
+      setpumpfunEarning(earning);
+    }
+  }, [solPrice]);
+  useEffect(() => {
+    if (tokenVolume) {
+      const earning = tokenVolume * 0.005;
+      setpumpkinearninig(earning);
+    }
+  }, [tokenVolume]);
+  const checkStatus = async () => {
+    console.log("Check status running");
+    if (executionID) {
+      try {
+        const res2 = await axios.get(
+          `https://api.dune.com/api/v1/execution/${executionID}/results`,
+          {
+            headers: {
+              "x-dune-api-key": import.meta.env.VITE_DENO_API_KEY, // API key header
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log("res2 :", res2);
+        if (res2?.data?.is_execution_finished == false) {
+          setTimeout(() => {
+            checkStatus();
+            return;
+          }, 3000);
+        } else {
+          settokenVolume(res2?.data?.result?.rows[0]?.total_volume);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.log("error fetching volume: ", error);
+        settokenVolume("");
+        setLoading(false);
+      }
+    } else {
+      console.log("NO EXECUTION ID FOUND");
+      setLoading(false);
+      settokenVolume("");
+    }
+  };
+  const handleCompare = async () => {
+    if (!tokenAddress) {
+      alert("Please enter a token address.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res1 = await axios.post(
+        "https://api.dune.com/api/v1/query/4222521/execute",
+        {
+          query_parameters: {
+            contract_address: tokenAddress,
+          },
+        },
+        {
+          headers: {
+            "x-dune-api-key": import.meta.env.VITE_DENO_API_KEY, // API key header
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Handle the response and update the state
+      console.log("res1 :", res1);
+      setexecutionID(res1?.data?.execution_id);
+    } catch (error) {
+      console.error("Error fetching comparison data:", error);
+      setLoading(false);
+      alert("Failed to fetch comparison data. Please try again.");
+    }
+  };
+  function formatDecimal(value) {
+    // Convert value to string to handle both string and number input
+    const stringValue = value.toString();
+
+    // Check if there's a decimal point
+    if (stringValue.includes(".")) {
+      // Split the integer part and decimal part
+      const [integerPart, decimalPart] = stringValue.split(".");
+
+      // If decimal part is longer than 3 digits, truncate it and add "..."
+      if (decimalPart.length > 3) {
+        return `${integerPart}.${decimalPart.slice(0, 3)}...`;
+      }
+
+      // If decimal part is 3 digits or less, return the original value
+      return stringValue;
+    }
+
+    // If no decimal, return the original value
+    return stringValue;
+  }
+  useEffect(() => {
+    if (executionID) {
+      setTimeout(async () => {
+        await checkStatus();
+      }, 4000);
+    }
+  }, [executionID]);
   return (
     <div className="max-w-7xl mx-auto py-[30px] px-3">
       <Header />
@@ -31,60 +169,68 @@ function App() {
               Find token
             </p>
             <input
+              value={tokenAddress}
+              onChange={(e) => setTokenAddress(e.target.value)}
               type="text"
               placeholder="Enter token name or address"
               className="bg-darkGray rounded-md py-4 px-4 outline-none border-none text-grey2 font-normal text-[14px] leading-[16px] placeholder:text-grey2 w-full"
             />
-            <button className="bg-yellow2 hover:bg-[#FFBE68] w-full text-center py-3 px-4 rounded-md text-black font-medium text-[18px] leading-[21px]">
-              Compare
+            <button
+              onClick={handleCompare}
+              disabled={loading}
+              className="bg-yellow2 hover:bg-[#FFBE68] w-full text-center py-3 px-4 rounded-md text-black font-medium text-[18px] leading-[21px]"
+            >
+              {loading ? "Loading..." : "Compare"}
             </button>
           </div>
         </div>
-        <div className="flex px-3 flex-col gap-3 items-center justify-center w-full">
-          <div className="flex items-center justify-between gap-3 flex-wrap w-full">
-            <div className="flex items-center gap-2">
-              <img width={50} src={kid} alt="Token image" />
-              <p className="text-white2 Fraunces font-semibold text-[27px] leading-[33px]">
-                $ALT2
-              </p>
-            </div>
-            <p className="text-grey2 font-normal text-[16px] leading-[18px]">
-              Volume: $238 382 328
-            </p>
-          </div>
-          <div className="flex gap-3  w-full flex-wrap sm:flex-nowrap">
-            <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-start">
-              <div className="flex items-center gap-3 justify-start">
-                <img src={pumpfunicon} alt="Icon" />
-                <p className="font-bold text-[18px] leading-[21px] text-white2">
-                  Pump.fun earnings
+        {tokenVolume && (
+          <div className="flex px-3 flex-col gap-3 items-center justify-center w-full">
+            <div className="flex items-center justify-between gap-3 flex-wrap w-full">
+              <div className="flex items-center gap-2">
+                <img width={50} src={kid} alt="Token image" />
+                <p className="text-white2 Fraunces font-semibold text-[27px] leading-[33px]">
+                  $ALT2
                 </p>
               </div>
-              <p className="text-green2 Fraunces font-semibold text-[27px] leading-[33px]">
-                $75
+              <p className="text-grey2 font-normal text-[16px] leading-[18px]">
+                Volume: ${formatDecimal(tokenVolume)}
               </p>
             </div>
-            <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end">
-              <div className="flex items-center gap-3 justify-end">
-                <img src={pumpkinlogo} alt="Icon" />
-                <p className="font-bold  text-[18px] leading-[21px] text-white2">
-                  Pumpkin earnings
+            <div className="flex gap-3  w-full flex-wrap sm:flex-nowrap">
+              <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-start">
+                <div className="flex items-center gap-3 justify-start">
+                  <img src={pumpfunicon} alt="Icon" />
+                  <p className="font-bold text-[18px] leading-[21px] text-white2">
+                    Pump.fun earnings
+                  </p>
+                </div>
+                <p className="text-green2 Fraunces font-semibold text-[27px] leading-[33px]">
+                  ${formatDecimal(pumpfunEarning)}
                 </p>
               </div>
-              <p className="text-yellow2 text-right Fraunces font-semibold text-[27px] leading-[33px]">
-                $356 805
+              <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end">
+                <div className="flex items-center gap-3 justify-end">
+                  <img src={pumpkinlogo} alt="Icon" />
+                  <p className="font-bold  text-[18px] leading-[21px] text-white2">
+                    Pumpkin earnings
+                  </p>
+                </div>
+                <p className="text-yellow2 text-right Fraunces font-semibold text-[27px] leading-[33px]">
+                  ${formatDecimal(pumpkinearninig)}
+                </p>
+              </div>
+            </div>
+            <div className="w-full flex flex-wrap justify-between items-center gap-3 card-shadow bg-lightGray rounded-md p-4">
+              <p className="font-bold text-center  text-[18px] leading-[21px] text-white2">
+                Creator Loss
+              </p>
+              <p className="text-[#BA4706] text-center  sm:text-right Fraunces font-semibold text-[27px] leading-[33px]">
+                $356 730
               </p>
             </div>
           </div>
-          <div className="w-full flex flex-wrap justify-between items-center gap-3 card-shadow bg-lightGray rounded-md p-4">
-            <p className="font-bold text-center  text-[18px] leading-[21px] text-white2">
-              Creator Loss
-            </p>
-            <p className="text-[#BA4706] text-center  sm:text-right Fraunces font-semibold text-[27px] leading-[33px]">
-              $356 730
-            </p>
-          </div>
-        </div>
+        )}
       </div>
       <Footer />
     </div>
