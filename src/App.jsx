@@ -7,6 +7,10 @@ import pumpfunicon from "./assets/icons/pumpfunicon.svg";
 import pumpkinlogo from "./assets/icons/pumpkinlogo.svg";
 import Footer from "./components/Footer";
 import axios from "axios";
+import { Bounce, ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Oval } from "react-loader-spinner";
+
 function App() {
   const [tokenAddress, setTokenAddress] = useState(""); // Store user input
   const [tokenVolume, settokenVolume] = useState(""); // Store API response
@@ -70,8 +74,26 @@ function App() {
             return;
           }, 3000);
         } else {
-          settokenVolume(res2?.data?.result?.rows[0]?.total_volume);
-          setLoading(false);
+          if (res2?.data?.result?.rows[0]?.total_volume) {
+            settokenVolume(res2?.data?.result?.rows[0]?.total_volume);
+            setLoading(false);
+            return;
+          } else {
+            toast.error("Not Found", {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+              theme: "colored",
+              // eslint-disable-next-line no-undef
+            });
+            settokenVolume("");
+            setLoading(false);
+            return;
+          }
         }
       } catch (error) {
         console.log("error fetching volume: ", error);
@@ -86,7 +108,17 @@ function App() {
   };
   const handleCompare = async () => {
     if (!tokenAddress) {
-      alert("Please enter a token address.");
+      toast.error("Please enter a token address", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        // eslint-disable-next-line no-undef
+      });
       return;
     }
 
@@ -113,7 +145,17 @@ function App() {
     } catch (error) {
       console.error("Error fetching comparison data:", error);
       setLoading(false);
-      alert("Failed to fetch comparison data. Please try again.");
+      toast.error("Something went wrong, try again", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        // eslint-disable-next-line no-undef
+      });
     }
   };
   function formatDecimal(value) {
@@ -154,8 +196,9 @@ function App() {
   }, [executionID]);
   return (
     <div className="max-w-7xl mx-auto py-[30px] px-3">
+      <ToastContainer transition={Bounce} />
       <Header />
-      <div className="max-w-[550px] min-w-[250px] mx-auto my-[20px]  flex flex-col gap-10 items-center">
+      <div className="max-w-[550px] min-w-[250px] mx-auto my-[40px] sm:my-[20px]  flex flex-col gap-10 items-center">
         <div className="flex card-shadow border border-black bg-baseColor rounded-md py-6 px-3 flex-col gap-6 sm:gap-0 items-center justify-center w-full">
           <div className="Fraunces text-center font-semibold text-[26px] sm:text-[45px] leading-[35px] sm:leading-[55px] text-white2 flex flex-col gap-0 items-center justify-center">
             <p>
@@ -186,8 +229,19 @@ function App() {
             <button
               onClick={handleCompare}
               disabled={loading}
-              className="bg-yellow2 hover:bg-[#FFBE68] w-full text-center py-3 px-4 rounded-md text-black font-medium text-[18px] leading-[21px]"
+              className="bg-yellow2 flex items-center justify-center gap-2 hover:bg-[#FFBE68] w-full text-center py-3 px-4 rounded-md text-black font-medium text-[18px] leading-[21px]"
             >
+              {loading && (
+                <Oval
+                  visible={loading}
+                  color="#eda803"
+                  secondaryColor="#000"
+                  strokeWidth={10}
+                  strokeWidthSecondary={10}
+                  width={20}
+                  height={20}
+                />
+              )}{" "}
               {loading ? "Loading..." : "Compare"}
             </button>
           </div>
