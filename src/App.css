@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');@import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,200..800;1,200..800&family=Roboto&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body{
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: radial-gradient(65.04% 65.04% at 50% 50%, #162132 0%, #0b1217 100%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  font-family: "karla", sans-serif;
+  font-size: 12px;
+}
+.Fraunces{
+  font-family: "Fraunces", sans-serif;
+
+}
+.card-shadow {
+  box-shadow: 0px 4px 4px 0px #00000040;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #0f171d;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #202b33;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #232f36;
+}
