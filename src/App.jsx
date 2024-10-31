@@ -32,7 +32,6 @@ function App() {
       const data = await response.json();
       const solanaPrice = data.solana.usd;
       setsolPrice(solanaPrice);
-      console.log(`Current Solana Price (USD): $${solanaPrice}`);
 
       // Do something with solanaPrice, e.g., update UI
     } catch (error) {
@@ -55,7 +54,6 @@ function App() {
     }
   }, [tokenVolume]);
   const checkStatus = async () => {
-    console.log("Check status running");
     if (executionID) {
       try {
         const res2 = await axios.get(
@@ -67,7 +65,6 @@ function App() {
             },
           }
         );
-        console.log("res2 :", res2);
         if (res2?.data?.is_execution_finished == false) {
           setTimeout(() => {
             checkStatus();
@@ -140,7 +137,6 @@ function App() {
       );
 
       // Handle the response and update the state
-      console.log("res1 :", res1);
       setexecutionID(res1?.data?.execution_id);
     } catch (error) {
       console.error("Error fetching comparison data:", error);
