@@ -31,6 +31,7 @@ function App() {
       const { name, image } = response.data;
       setTokenName(name);
       setTokenImg(image?.small);
+      return true;
     } catch (error) {
       console.error("Error fetching token details:", error);
       setTokenName("");
@@ -46,6 +47,7 @@ function App() {
         theme: "colored",
         // eslint-disable-next-line no-undef
       });
+      return false;
     }
   };
   async function fetchSolanaPrice() {
@@ -61,10 +63,12 @@ function App() {
       const data = await response.json();
       const solanaPrice = data.solana.usd;
       setsolPrice(solanaPrice);
-
+      return true;
       // Do something with solanaPrice, e.g., update UI
     } catch (error) {
+      setsolPrice("");
       console.error("Failed to fetch Solana price:", error);
+      return false;
     }
   }
   const checkStatus = async () => {
@@ -87,7 +91,7 @@ function App() {
         } else {
           if (res2?.data?.result?.rows[0]?.total_volume) {
             settokenVolume(res2?.data?.result?.rows[0]?.total_volume);
-            setLoading(false);
+            // setLoading(false);
             return;
           } else {
             toast.error("Not Found", {
@@ -102,18 +106,18 @@ function App() {
               // eslint-disable-next-line no-undef
             });
             settokenVolume("");
-            setLoading(false);
+            // setLoading(false);
             return;
           }
         }
       } catch (error) {
         console.log("error fetching volume: ", error);
         settokenVolume("");
-        setLoading(false);
+        // setLoading(false);
       }
     } else {
       console.log("NO EXECUTION ID FOUND");
-      setLoading(false);
+      // setLoading(false);
       settokenVolume("");
     }
   };
@@ -134,9 +138,8 @@ function App() {
     }
 
     try {
-      setLoading(true);
-      await fetchTokenDetails();
-      await fetchSolanaPrice();
+      // setLoading(true);
+
       const res1 = await axios.post(
         "https://api.dune.com/api/v1/query/4222521/execute",
         {
@@ -156,7 +159,7 @@ function App() {
       setexecutionID(res1?.data?.execution_id);
     } catch (error) {
       console.error("Error fetching comparison data:", error);
-      setLoading(false);
+      setexecutionID("");
       toast.error("Something went wrong, try again", {
         position: "top-right",
         autoClose: 5000,
@@ -199,7 +202,29 @@ function App() {
     // If no decimal, just format the integer part
     return formatIntegerPart(stringValue);
   }
-
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      await fetchTokenDetails().then(async (status) => {
+        if (status) {
+          console.log("status :", status);
+          await fetchSolanaPrice().then(async (status) => {
+            if (status) {
+              console.log("status :", status);
+              await handleCompare();
+            } else {
+              setLoading(false);
+            }
+          });
+        } else {
+          setLoading(false);
+        }
+      });
+    } catch (error) {
+      console.log("Something went wrong :", error);
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (solPrice) {
       const earning = solPrice * 0.5;
@@ -208,6 +233,7 @@ function App() {
   }, [solPrice]);
   useEffect(() => {
     if (tokenVolume) {
+      setLoading(false);
       const earning = tokenVolume * 0.005;
       setpumpkinearninig(earning);
     }
@@ -253,7 +279,7 @@ function App() {
               className="bg-darkGray rounded-md py-4 px-4 outline-none border-none text-grey2 font-normal text-[14px] leading-[16px] placeholder:text-grey2 w-full"
             />
             <button
-              onClick={handleCompare}
+              onClick={handleClick}
               disabled={loading}
               className="bg-yellow2 flex items-center justify-center gap-2 hover:bg-[#FFBE68] w-full text-center py-3 px-4 rounded-md text-black font-medium text-[18px] leading-[21px]"
             >
@@ -272,7 +298,7 @@ function App() {
             </button>
           </div>
         </div>
-        {tokenVolume && (
+        {tokenVolume && !loading && (
           <div className="flex px-3 flex-col gap-6 items-center justify-center w-full">
             <div className="flex items-center justify-between gap-3 flex-wrap w-full">
               <div className="flex items-center gap-2">
