@@ -5,6 +5,7 @@ import pumpkinsearch from "./assets/icons/pumpkinsearch.svg";
 import kid from "./assets/icons/kid.svg";
 import pumpfunicon from "./assets/icons/pumpfunicon.svg";
 import pumpkinlogo from "./assets/icons/pumpkinlogo.svg";
+import fire from "./assets/icons/fire.svg";
 import Footer from "./components/Footer";
 import axios from "axios";
 import { Bounce, ToastContainer, toast } from "react-toastify";
@@ -19,6 +20,34 @@ function App() {
   const [pumpfunEarning, setpumpfunEarning] = useState("");
   const [pumpkinearninig, setpumpkinearninig] = useState("");
   const [solPrice, setsolPrice] = useState("");
+  const [tokenName, setTokenName] = useState("");
+  const [tokenImg, setTokenImg] = useState("");
+
+  const fetchTokenDetails = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.coingecko.com/api/v3/coins/solana/contract/${tokenAddress}`
+      );
+      const { name, image } = response.data;
+      setTokenName(name);
+      setTokenImg(image?.small);
+    } catch (error) {
+      console.error("Error fetching token details:", error);
+      setTokenName("");
+      setTokenImg("");
+      toast.error("Token Not Found", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        // eslint-disable-next-line no-undef
+      });
+    }
+  };
   async function fetchSolanaPrice() {
     try {
       const response = await fetch(
@@ -38,21 +67,6 @@ function App() {
       console.error("Failed to fetch Solana price:", error);
     }
   }
-  useEffect(() => {
-    fetchSolanaPrice();
-  }, []);
-  useEffect(() => {
-    if (solPrice) {
-      const earning = solPrice * 0.5;
-      setpumpfunEarning(earning);
-    }
-  }, [solPrice]);
-  useEffect(() => {
-    if (tokenVolume) {
-      const earning = tokenVolume * 0.005;
-      setpumpkinearninig(earning);
-    }
-  }, [tokenVolume]);
   const checkStatus = async () => {
     if (executionID) {
       try {
@@ -121,6 +135,8 @@ function App() {
 
     try {
       setLoading(true);
+      await fetchTokenDetails();
+      await fetchSolanaPrice();
       const res1 = await axios.post(
         "https://api.dune.com/api/v1/query/4222521/execute",
         {
@@ -183,6 +199,19 @@ function App() {
     // If no decimal, just format the integer part
     return formatIntegerPart(stringValue);
   }
+
+  useEffect(() => {
+    if (solPrice) {
+      const earning = solPrice * 0.5;
+      setpumpfunEarning(earning);
+    }
+  }, [solPrice]);
+  useEffect(() => {
+    if (tokenVolume) {
+      const earning = tokenVolume * 0.005;
+      setpumpkinearninig(earning);
+    }
+  }, [tokenVolume]);
   useEffect(() => {
     if (executionID) {
       setTimeout(async () => {
@@ -190,6 +219,7 @@ function App() {
       }, 4000);
     }
   }, [executionID]);
+
   return (
     <div className="max-w-7xl mx-auto py-[30px] px-3">
       <ToastContainer transition={Bounce} />
@@ -243,40 +273,70 @@ function App() {
           </div>
         </div>
         {tokenVolume && (
-          <div className="flex px-3 flex-col gap-3 items-center justify-center w-full">
+          <div className="flex px-3 flex-col gap-6 items-center justify-center w-full">
             <div className="flex items-center justify-between gap-3 flex-wrap w-full">
               <div className="flex items-center gap-2">
-                <img width={50} src={kid} alt="Token image" />
+                <img
+                  width={50}
+                  src={tokenImg || kid}
+                  alt="Token image"
+                  className="rounded-full"
+                />
                 <p className="text-white2 Fraunces font-semibold text-[27px] leading-[33px]">
-                  $ALT2
+                  {tokenName || "token"}
                 </p>
               </div>
               <p className="text-grey2 font-normal text-[16px] leading-[18px]">
                 Volume: ${formatDecimal(tokenVolume)}
               </p>
             </div>
-            <div className="flex gap-3  w-full flex-wrap sm:flex-nowrap">
-              <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-start">
-                <div className="flex items-center gap-3 justify-start">
-                  <img src={pumpfunicon} alt="Icon" />
-                  <p className="font-bold text-[18px] leading-[21px] text-white2">
-                    Pump.fun earnings
+            <div className="w-full flex flex-col gap-3">
+              <p className="font-semibold text-[18px] Fraunces leading-[22px] text-white2 w-full">
+                Your earnings on:
+              </p>
+              <div className="flex gap-3  w-full flex-wrap sm:flex-nowrap">
+                <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-start border border-transparent">
+                  <div className="w-full flex items-center gap-3 justify-between">
+                    <img src={pumpfunicon} alt="Icon" />
+                    <p className="font-bold text-[18px] leading-[21px] text-white2">
+                      Pump.fun
+                    </p>
+                  </div>
+                  <p className="text-green2 Fraunces font-semibold text-[27px] leading-[33px]">
+                    ${formatDecimal(pumpfunEarning)}
                   </p>
                 </div>
-                <p className="text-green2 Fraunces font-semibold text-[27px] leading-[33px]">
-                  ${formatDecimal(pumpfunEarning)}
-                </p>
+                <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end border border-yellow2">
+                  <div className="w-full flex items-center gap-3 justify-between">
+                    <img width={40} src={pumpkinlogo} alt="Icon" />
+                    <p className="font-bold  text-[18px] leading-[21px] text-white2">
+                      Pumpkin
+                    </p>
+                  </div>
+                  <p className="text-yellow2 text-right Fraunces font-semibold text-[27px] leading-[33px]">
+                    ${formatDecimal(pumpkinearninig)}
+                  </p>
+                </div>
               </div>
-              <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end">
-                <div className="flex items-center gap-3 justify-end">
-                  <img width={40} src={pumpkinlogo} alt="Icon" />
-                  <p className="font-bold  text-[18px] leading-[21px] text-white2">
-                    Pumpkin earnings
+              <div className="flex gap-3  w-full flex-wrap sm:flex-nowrap mt-2">
+                <div className="w-full flex flex-col justify-center gap-3 rounded-md pr-4 items-center sm:items-start border border-transparent">
+                  <p className="text-grey2 font-normal text-[16px] leading-[18px] text-center sm:text-left">
+                    Tokens launched on Pumpkin are deflationary by default,
+                    burning the supply with each trade.
                   </p>
                 </div>
-                <p className="text-yellow2 text-right Fraunces font-semibold text-[27px] leading-[33px]">
-                  ${formatDecimal(pumpkinearninig)}
-                </p>
+                <div className="w-full flex flex-col gap-3 card-shadow bg-lightGray rounded-md p-4 items-center sm:items-end border border-transparent">
+                  <div className="w-full flex items-center gap-3 justify-between">
+                    <img width={35} src={fire} alt="Icon" />
+                    <p className="font-bold  text-[18px] leading-[21px] text-white2">
+                      Supply Burn
+                    </p>
+                  </div>
+                  <p className="text-[#BA4706] text-right Fraunces font-semibold text-[27px] leading-[33px]">
+                    $713 610{" "}
+                    <span className="text-[13px] text-white2">(13.3%) </span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
