@@ -207,10 +207,8 @@ function App() {
     try {
       await fetchTokenDetails().then(async (status) => {
         if (status) {
-          console.log("status :", status);
           await fetchSolanaPrice().then(async (status) => {
             if (status) {
-              console.log("status :", status);
               await handleCompare();
             } else {
               setLoading(false);
